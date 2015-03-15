@@ -147,6 +147,7 @@ int main(int argc, char* argv[])
 {
 //	test();
 
+#if 0
 	{
 		__m128i a, b;
 		a = _mm_setr_epi8(
@@ -167,6 +168,7 @@ int main(int argc, char* argv[])
 			print_m128i_bytes(c);
 		}
 	}
+#endif
 
 	//printf("\n");
 	//{
@@ -183,7 +185,8 @@ int main(int argc, char* argv[])
 	//	}
 	//}
 
-//	getchar();
+	extern void test_gather();
+	test_gather();
 	return 0;
 }
 
