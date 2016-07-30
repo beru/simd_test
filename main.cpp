@@ -3,6 +3,7 @@
 #include <intrin.h>
 #include <immintrin.h>
 #include <stdint.h>
+#include <boost/preprocessor.hpp>
 
 template<bool> struct Range;
 
@@ -34,6 +35,120 @@ template <unsigned int N>
 __m256i mm256_shift_left(__m256i a)
 {
 	return mm256_shift_left_impl<N>::doit(a);
+}
+
+template<unsigned int N, typename = Range<true> >
+struct mm256_funnel_shift_right_impl
+{};
+
+template<unsigned int N>
+struct mm256_funnel_shift_right_impl<N, Range<(N == 0)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		return a;
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_right_impl<N, Range<(0 < N && N < 16)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		__m256i mask = _mm256_permute2x128_si256(a, b, 0x21);
+		return _mm256_alignr_epi8(mask,a,N);
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_right_impl<N, Range<(N == 16)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		return _mm256_permute2x128_si256(a, b, 0x21);
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_right_impl<N, Range<(16 < N && N < 32)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		__m256i mask = _mm256_permute2x128_si256(a, b, 0x21);
+		return _mm256_alignr_epi8(b,mask,N-16);
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_right_impl<N, Range<(N == 32)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		return b;
+	}
+};
+
+template <unsigned int N>
+inline __m256i mm256_funnel_shift_right(__m256i a, __m256i b)
+{
+	return mm256_funnel_shift_right_impl<N>::doit(a, b);
+}
+
+template<unsigned int N, typename = Range<true> >
+struct mm256_funnel_shift_left_impl
+{};
+
+template<unsigned int N>
+struct mm256_funnel_shift_left_impl<N, Range<(N == 0)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		return a;
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_left_impl<N, Range<(0 < N && N < 16)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		__m256i mask = _mm256_permute2x128_si256(b, a, 0x21);
+		return _mm256_alignr_epi8(a,mask,16-N);
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_left_impl<N, Range<(N == 16)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		return _mm256_permute2x128_si256(b, a, 0x21);
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_left_impl<N, Range<(16 < N && N < 32)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		__m256i mask = _mm256_permute2x128_si256(b, a, 0x21);
+		return _mm256_alignr_epi8(mask,b,32-N);
+	}
+};
+
+template<unsigned int N>
+struct mm256_funnel_shift_left_impl<N, Range<(N == 32)> >
+{
+	static __m256i doit(__m256i a, __m256i b)
+	{
+		return b;
+	}
+};
+
+template <unsigned int N>
+inline __m256i mm256_funnel_shift_left(__m256i a, __m256i b)
+{
+	return mm256_funnel_shift_left_impl<N>::doit(a, b);
 }
 
 #ifdef _MSC_VER
@@ -75,9 +190,8 @@ inline __m256i shift_bytes(__m256i v, int shift)
 	return _mm256_shuffle_epi8(v, mask);
 }
 
-
 static
-void print_mm256_bytes(__m256i bytes)
+void print_m256i_bytes(__m256i bytes)
 {
 	for (int i = 31; i >= 0; --i) {
 		printf("%2d ",((unsigned char *)&bytes)[i]);
@@ -97,9 +211,9 @@ void print_m128i_bytes(__m128i bytes)
 template <unsigned int N>
 void test(__m256i reg)
 {
-	print_mm256_bytes(mm256_shift_left<N>(reg));
+    printf("[%2d] ", N);
+	print_m256i_bytes(mm256_shift_left<N>(reg));
 }
-
 
 void test()
 {
@@ -108,44 +222,59 @@ void test()
 		16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1
 	);
 	
-	test<0>(reg);
-	test<1>(reg);
-	test<2>(reg);
-	test<3>(reg);
-	test<4>(reg);
-	test<5>(reg);
-	test<6>(reg);
-	test<7>(reg);
-	test<8>(reg);
-	test<9>(reg);
-	test<10>(reg);
-	test<11>(reg);
-	test<12>(reg);
-	test<13>(reg);
-	test<14>(reg);
-	test<15>(reg);
-	test<16>(reg);
-	test<17>(reg);
-	test<18>(reg);
-	test<19>(reg);
-	test<20>(reg);
-	test<21>(reg);
-	test<22>(reg);
-	test<23>(reg);
-	test<24>(reg);
-	test<25>(reg);
-	test<26>(reg);
-	test<27>(reg);
-	test<28>(reg);
-	test<29>(reg);
-	test<30>(reg);
-	test<31>(reg);
-	test<32>(reg);
+    #define GEN_CALL(z, i) test<i>(reg);
+    BOOST_PP_REPEAT(31,GEN_CALL)
+    #undef GEN_CALL
+}
+
+template <unsigned int N>
+void test_R(__m256i a, __m256i b)
+{
+    printf("[%2d] ", N);
+	print_m256i_bytes(mm256_funnel_shift_right<N>(a, b));
+}
+
+template <unsigned int N>
+void test_L(__m256i a, __m256i b)
+{
+    printf("[%2d] ", N);
+	print_m256i_bytes(mm256_funnel_shift_left<N>(a, b));
+}
+
+void test2()
+{
+	__m256i a, b;
+	a = _mm256_setr_epi8(
+		0, 1, 2, 3, 4, 5, 6, 7,
+		8, 9, 10, 11, 12, 13, 14, 15,
+		16, 17, 18, 19, 20, 21, 22, 23,
+		24, 25, 26, 27, 28, 29, 30, 31
+		);
+	b = _mm256_setr_epi8(
+        32, 33, 34, 35, 36, 37, 38, 39,
+        40, 41, 42, 43, 44, 45, 46, 47,
+        48, 49, 50, 51, 52, 53, 54, 55,
+        56, 57, 58, 59, 60, 61, 62, 63
+		);
+
+#if 1
+    #define GEN_CALL(z, i) test_R<i>(a,b);
+    BOOST_PP_REPEAT(33,GEN_CALL)
+    #undef GEN_CALL
+	printf("\n");
+#endif
+
+#if 1
+    #define GEN_CALL(z, i) test_L<i>(b,a);
+    BOOST_PP_REPEAT(33,GEN_CALL)
+    #undef GEN_CALL
+#endif
 }
 
 int main(int argc, char* argv[])
 {
 //	test();
+    test2();
 
 #if 0
 	{
@@ -185,8 +314,8 @@ int main(int argc, char* argv[])
 	//	}
 	//}
 
-	extern void test_gather();
-	test_gather();
+	//extern void test_gather();
+	//test_gather();
 	return 0;
 }
 
