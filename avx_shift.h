@@ -1,6 +1,4 @@
 
-#include <stdio.h>
-#include <stdint.h>
 #include <intrin.h>
 #include <type_traits>
 #include <cassert>
@@ -289,13 +287,13 @@ struct m256i_shift_right_impl<N, Range<N == 16>> {
 template<unsigned int N>
 struct m256i_shift_right_impl<N, Range<(16 < N && N < 32)>> {
     static __m256i doit(__m256i a) {
-        __m256i y1 = _mm256_srli_si256(a, N - 16);
-        return _mm256_permute2x128_si256(y1, y1, 0x81);
+        __m256i tmp = _mm256_srli_si256(a, N - 16);
+        return _mm256_permute2x128_si256(tmp, tmp, 0x81);
     }
 };
 
 template<unsigned int N>
-struct m256i_shift_right_impl<N, Range<N == 32>> {
+struct m256i_shift_right_impl<N, Range<N >= 32>> {
     static __m256i doit(__m256i a) {
         return _mm256_setzero_si256();
     }
@@ -332,13 +330,13 @@ struct m256i_shift_left_impl<N, Range<N == 16>> {
 template<unsigned int N>
 struct m256i_shift_left_impl<N, Range<(16 < N && N < 32)>> {
     static __m256i doit(__m256i a) {
-        __m256i y1 = _mm256_slli_si256(a, N - 16);
-        return _mm256_permute2x128_si256(y1, y1, 0x08);
+        __m256i tmp = _mm256_slli_si256(a, N - 16);
+        return _mm256_permute2x128_si256(tmp, tmp, 0x08);
     }
 };
 
 template<unsigned int N>
-struct m256i_shift_left_impl<N, Range<N == 32>> {
+struct m256i_shift_left_impl<N, Range<N >= 32>> {
     static __m256i doit(__m256i a) {
         return _mm256_setzero_si256();
     }
