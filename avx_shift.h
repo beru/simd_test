@@ -477,7 +477,7 @@ inline __m128i m128i_shift(__m128i v, int shift)
 inline __m128i m128i_funnel_shift_right(__m128i a, __m128i b, int shift)
 {
     assert(0 <= shift && shift <= 16);
-    __m128i b0 = _mm_shuffle_epi8(b, _mm_loadu_si128((const __m128i*)(shiftPattern + 16 +shift)));
+    __m128i b0 = _mm_shuffle_epi8(b, _mm_loadu_si128((const __m128i*)(shiftPattern + 16 + shift)));
     __m128i a0 = _mm_shuffle_epi8(a, _mm_loadu_si128((const __m128i*)(shiftPattern + 32 + shift)));
     return _mm_or_si128(a0, b0);
 }
@@ -497,9 +497,17 @@ inline __m256i m256i_shift_right(__m256i v, int shift)
     __m256i a0 = _mm256_shuffle_epi8(v, mask);
 
     __m256i a1 = _mm256_castsi128_si256(_mm_shuffle_epi8(_mm256_extracti128_si256(v, 1), _mm_loadu_si128((const __m128i*)(shiftPattern + 16 + shift))));
-    __m256i a2 = _mm256_permute2x128_si256(a1, a1, 0x80);
 
-    return _mm256_or_si256(a0, a2);
+    return _mm256_or_si256(a0, a1);
+}
+
+inline __m256i m256i_shift_right_16_32(__m256i v, int shift)
+{
+    assert(16 <= shift && shift <= 32);
+
+    __m256i a1 = _mm256_castsi128_si256(_mm_shuffle_epi8(_mm256_extracti128_si256(v, 1), _mm_loadu_si128((const __m128i*)(shiftPattern + 16 + shift))));
+    __m256i a2 = _mm256_permute2x128_si256(a1, a1, 0x80);
+    return a2;
 }
 
 inline __m256i m256i_shift_left(__m256i v, int shift)
@@ -512,6 +520,15 @@ inline __m256i m256i_shift_left(__m256i v, int shift)
     __m256i a2 = _mm256_permute2x128_si256(a1, a1, 0x08);
 
     return _mm256_or_si256(a0, a2);
+}
+
+inline __m256i m256i_shift_left_16_32(__m256i v, int shift)
+{
+    assert(16 <= shift && shift <= 32);
+    __m256i a1 = _mm256_castsi128_si256(_mm_shuffle_epi8(_mm256_castsi256_si128(v), _mm_loadu_si128((const __m128i*)(shiftPattern + 48 - shift))));
+    __m256i a2 = _mm256_permute2x128_si256(a1, a1, 0x08);
+
+    return a2;
 }
 
 inline __m256i m256i_funnel_shift_right(__m256i a, __m256i b, int shift) {
@@ -530,6 +547,32 @@ inline __m256i m256i_funnel_shift_right(__m256i a, __m256i b, int shift) {
     return _mm256_or_si256(ab0, _mm256_or_si256(a0, b0));
 }
 
+inline __m256i m256i_funnel_shift_right_0_16(__m256i a, __m256i b, int shift) {
+    assert(0 <= shift && shift <= 16);
+
+    __m256i ma = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + 32 + shift)));
+    __m256i a0 = _mm256_shuffle_epi8(a, ma);
+
+    const __m256i pat = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + 16 + shift)));
+    __m256i ab = _mm256_permute2x128_si256(a, b, 0x21);
+    __m256i ab0 = _mm256_shuffle_epi8(ab, pat);
+
+    return _mm256_or_si256(ab0, a0);
+}
+
+inline __m256i m256i_funnel_shift_right_16_32(__m256i a, __m256i b, int shift) {
+    assert(16 <= shift && shift <= 32);
+
+    __m256i mb = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + shift)));
+    __m256i b0 = _mm256_shuffle_epi8(b, mb);
+    
+    const __m256i pat = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + 16 + shift)));
+    __m256i ab = _mm256_permute2x128_si256(a, b, 0x21);
+    __m256i ab0 = _mm256_shuffle_epi8(ab, pat);
+
+    return _mm256_or_si256(ab0, b0);
+}
+
 inline __m256i m256i_funnel_shift_left(__m256i a, __m256i b, int shift) {
     assert(0 <= shift && shift <= 32);
 
@@ -546,3 +589,28 @@ inline __m256i m256i_funnel_shift_left(__m256i a, __m256i b, int shift) {
     return _mm256_or_si256(ab0, _mm256_or_si256(a0, b0));
 }
 
+inline __m256i m256i_funnel_shift_left_0_16(__m256i a, __m256i b, int shift) {
+    assert(0 <= shift && shift <= 16);
+
+    __m256i ma = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + 32 - shift)));
+    __m256i a0 = _mm256_shuffle_epi8(a, ma);
+    
+    const __m256i pat = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + 48 - shift)));
+    __m256i ab = _mm256_permute2x128_si256(a, b, 0x03);
+    __m256i ab0 = _mm256_shuffle_epi8(ab, pat);
+
+    return _mm256_or_si256(ab0, a0);
+}
+
+inline __m256i m256i_funnel_shift_left_16_32(__m256i a, __m256i b, int shift) {
+    assert(16 <= shift && shift <= 32);
+
+    __m256i mb = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + 64 - shift)));
+    __m256i b0 = _mm256_shuffle_epi8(b, mb);
+
+    const __m256i pat = _mm256_broadcastsi128_si256(_mm_loadu_si128((const __m128i*)(shiftPattern + 48 - shift)));
+    __m256i ab = _mm256_permute2x128_si256(a, b, 0x03);
+    __m256i ab0 = _mm256_shuffle_epi8(ab, pat);
+
+    return _mm256_or_si256(ab0, b0);
+}

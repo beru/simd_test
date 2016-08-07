@@ -180,9 +180,25 @@ void test4()
     }
     lf();
 
+    printf("m256i_shift_right_16_32\n");
+    for (int i = 16; i <= 32; ++i) {
+        __m256i c = m256i_shift_right_16_32(a, i);
+        idx(i);
+        print_m256i_bytes(c);
+    }
+    lf();
+
     printf("m256i_shift_left\n");
     for (int i = 0; i <= 32; ++i) {
         __m256i c = m256i_shift_left(a, i);
+        idx(i);
+        print_m256i_bytes(c);
+    }
+    lf();
+
+    printf("m256i_shift_left_16_32\n");
+    for (int i = 16; i <= 32; ++i) {
+        __m256i c = m256i_shift_left_16_32(a, i);
         idx(i);
         print_m256i_bytes(c);
     }
@@ -196,9 +212,41 @@ void test4()
     }
     lf();
 
+    printf("m256i_funnel_shift_right_0_16\n");
+    for (int i = 0; i <= 16; ++i) {
+        __m256i c = m256i_funnel_shift_right_0_16(a, b, i);
+        idx(i);
+        print_m256i_bytes(c);
+    }
+    lf();
+
+    printf("m256i_funnel_shift_right_16_32\n");
+    for (int i = 16; i <= 32; ++i) {
+        __m256i c = m256i_funnel_shift_right_16_32(a, b, i);
+        idx(i);
+        print_m256i_bytes(c);
+    }
+    lf();
+
     printf("m256i_funnel_shift_left\n");
     for (int i = 0; i <= 32; ++i) {
         __m256i c = m256i_funnel_shift_left(b, a, i);
+        idx(i);
+        print_m256i_bytes(c);
+    }
+    lf();
+
+    printf("m256i_funnel_shift_left_0_16\n");
+    for (int i = 0; i <= 16; ++i) {
+        __m256i c = m256i_funnel_shift_left_0_16(b, a, i);
+        idx(i);
+        print_m256i_bytes(c);
+    }
+    lf();
+
+    printf("m256i_funnel_shift_left_16_32\n");
+    for (int i = 16; i <= 32; ++i) {
+        __m256i c = m256i_funnel_shift_left_16_32(b, a, i);
         idx(i);
         print_m256i_bytes(c);
     }
