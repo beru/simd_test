@@ -145,10 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\avx_shift.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\avx_shift_test.cpp" />
+    <ClCompile Include="..\avx_hsum_test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
