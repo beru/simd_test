@@ -90,6 +90,28 @@ void float_test()
 
     {
         __m256 ret;
+        ret = hsum6x256_ps(
+            _mm256_loadu_ps(&fs[0]),
+            _mm256_loadu_ps(&fs[010]),
+            _mm256_loadu_ps(&fs[020]),
+            _mm256_loadu_ps(&fs[030]),
+            _mm256_loadu_ps(&fs[040]),
+            _mm256_loadu_ps(&fs[050])
+        );
+        _mm256_storeu_ps(results, ret);
+        pass = true;
+        for (size_t i=0; i<6; ++i) {
+            a = results[i];
+            int base = 8 * i;
+            b = fs[base+0] + fs[base+1] + fs[base+2] + fs[base+3] + fs[base+4] + fs[base+5] + fs[base+6] + fs[base+7];
+            diff = a - b;
+            pass &= abs(diff) <= std::numeric_limits<float>::epsilon();
+        }
+        printf("%s hsum6x256_ps\n", pass ? "PASS" : "FAIL");
+    }
+
+    {
+        __m256 ret;
         ret = hsum8x256_ps(
             _mm256_loadu_ps(&fs[0]),
             _mm256_loadu_ps(&fs[010]),
